@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="LocalAiApi/LocalAiApi.csproj" />
+  <Project Path="WPF/WPF.csproj" Id="4f01cd81-0902-42a8-824a-335d49773f39" />
 </Solution>
