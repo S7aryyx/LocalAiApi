@@ -3,7 +3,9 @@ using LocalAiApi.Models;
 using LocalAiApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -21,61 +23,56 @@ namespace WPF
     /// </summary>
     public partial class MainWindow : Window
     {
+        private HttpClient httpClient = new()
+        {
+            BaseAddress = new Uri("https://localhost:7110/")
+        };
+        public bool isShow;
+        public double baseWidth = 420; //Полное окно
+        public double findWidth = 100; //Свёрнутое
         public MainWindow()
         {
-            
-            public HttpClient client = new HttpClient();
-            public OllamaService olms = new OllamaService(clie);
-            //client.Dispose(); //При закрытии WPF -> Разорвёт соединение с LocalAI_API , теим самым закроет подключения.
             InitializeComponent();
         }
+        public void ToggleButton_Click(object sender, RoutedEventArgs e)
+        {//Кнопка свернуть
+            isShow = !isShow;
+            Width = isShow ? baseWidth : findWidth;
 
-        public async Task OnButtonSendClick(object sender, RoutedEventArgs e)
-        {
-            var выбранная_заметка;
-            //или
-            var выбранные_заметки; 
-            //Если заметок много (>1) Выбранные заметки будут лежать в [] массиве
-
-            //Перед отправкой , через TRY-Catch , конвертим все заметки\заметку в JSON
-
-            await 
-
+            ToggleButton.Content = isShow ? "<" : ">";
         }
 
-        public async string Chat(CancellationToken cancellationToken)
+        public async void GenerateButton_Click(object sender, RoutedEventArgs e)
         {
-            
-            
-        }
-
-        private void VisabilityButton_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void SendButton_Click(object sender, RoutedEventArgs e)
-        {
+            GenerateButton.IsEnabled = false;
+            ResponseTextBox.Text = "Анализ в процессе генерации. Ожидайте!";
             try
             {
-                HttpClient httpClient = new HttpClient(); //Посмотреть параметры httpClient , 
-                                                          //Если получится дать соединению ИМЯ (или клиенту) , будет круто.
+                var request = new ChatRequest
+                {
+                    Message = JsonSerializer.Serialize(new
+                    {
+                        NoteTitle = "Название Заметки",
+                        NoteContent = "рецепт блинов",
+                        NoteType = "Личное"
+                    }),
+                    Prompt = "analyse"
+                };
 
-                var Note_Json = "Привет Qwen , ты живой ?";
-                var result = await olms.ChatAsync(Note_Json, "analyse", cancellationToken);
-                return result;
+                using var respose = await httpClient.PostAsJsonAsync("api/chat", request);
+                respose.EnsureSuccessStatusCode(); //Ожидаем получение ответа от ИИ до полной готовности
 
-                //Вызываем через ссыылку метод ЧАТА.
-                //Для удобства можно сделать ChatWithWPF -> такой-же по смыслу метод на AI сервере
-                //Но который , будет принимать заметку в обработку, а ен просто входную строчку
-
+                var final_answer = await respose.Content.ReadAsStringAsync();
+                ResponseTextBox.Text = final_answer ?? "ИИ не вернула ответ";
             }
-
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
-                MessageBox.Show("ИИ Вернула неккоректный ответ");
+                ResponseTextBox.Text = $"Не удалось получить анализ {ex.Message}";
+            }
+            finally
+            {
+                GenerateButton.IsEnabled = true;
             }
         }
     }
-}
 }
