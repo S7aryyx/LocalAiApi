@@ -5,7 +5,7 @@
         private readonly Dictionary<string, string> prompts =
             new(StringComparer.OrdinalIgnoreCase)
             {
-                ["analyse"] = "Ты ИИ, но работаешь за аналитика с 10 летним опытом. Ты - профессионал своего дела.",
+                ["analyse"] = "",
                 ["universal"] = "Ты универсальный боец. Должен отвечать на все запросы."
             };
 
